@@ -1,66 +1,74 @@
+import {
+  requireInstance,
+  requireType,
+  isType
+} from './util';
+
+import {getAlloyDefinition} from './define';
+
 const ATTRIBUTES = {
 	children (children) {
-		RequireInstance(children, Array);
-		for (var i = 0, l = children.length; i < l; i++) {
-			DOOM.create(children[i], this);
+		requireInstance(children, Array);
+		for (let child of children) {
+			create(child, this);
 		}
 	},
 	events (events) {
-		RequireInstance(events, Object);
+		requireInstance(events, Object);
 		for (let eventName in events) {
-			this.addEventListener(eventName, events[eventName], false);
+			this.addEventListener(eventName, events[eventName]);
 		}
 	},
 	attributes (attributes) {
-		RequireInstance(attributes, Object);
+		requireInstance(attributes, Object);
 		for (let attributeName in attributes) {
 			this.setAttribute(attributeName, attributes[attributeName]);
 		}
 	},
 	properties (properties) {
-		RequireInstance(properties, Object);
+		requireInstance(properties, Object);
 		for (let propertyName in properties) {
 			this[propertyName] = properties[propertyName];
 		}
 	},
 	template (str) {
-		
+
 	},
 	text (str) {
-		RequireType(str, 'string');
+		requireType(str, 'string');
 		this.textContent = str;
 	},
 	html (str) {
-		RequireType(str, 'string');
+		requireType(str, 'string');
 		this.innerHTML = str;
 	},
 	style (str) {
-		RequireType(str, 'string');
+		requireType(str, 'string');
 		this.style.cssText = str;
 	},
 	class (str) {
-		RequireType(str, 'string');
+		requireType(str, 'string');
 		this.className = str;
 	}
 };
 
-export default function create(options, parent) {
+function create(options, parent) {
 	let element;
-	if (typeof options === 'string') {
+	if (isType(options, 'string')) {
 		// if options was supplied as a string, use that as the tagName
 		element = document.createElement(options);
 	} else {
-		RequireInstance(options, Object);
-		let tag = options.tag;
+		requireInstance(options, Object);
+		const tag = options.tag;
 		if (tag) {
 			// search our definitions list for an alloy with that tag
-			let alloy = DEFINITIONS.get(tag);
+			let alloy = getAlloyDefinition(tag);
 			element = alloy ? alloy() : document.createElement(tag);
 		} else {
 			element = document.createElement('div');
 		}
 		//
-		for (var attribute in options) {
+		for (let attribute in options) {
 			if (ATTRIBUTES[attribute])
 				ATTRIBUTES[attribute].apply(element, options[attribute]);
 			else
@@ -70,6 +78,9 @@ export default function create(options, parent) {
 	// check for optional
 	parent = parent || options.parent;
 
-	parent && RequireElement(parent) && parent.appendChild(element)
+	parent && requireInstance(parent, HTMLElement) && parent.appendChild(element);
+
 	return element;
-};
+}
+
+export default create;
