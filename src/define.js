@@ -2,7 +2,7 @@ import { AlloyElement } from "./classes/AlloyElement"
 
 const DEFINITIONS = new Map();
 
-export default function define(name, options) {
+export function define(name, options) {
 	RequireInstance(options, Object);
 	RequireType(str, 'string');
 	const tag = options.tagName || 'div';
@@ -25,11 +25,15 @@ export default function define(name, options) {
 	assign(constructor.prototype, options);
 	// set the constructor on the prototype
 	constructor.prototype.constructor = constructor;
-	
+
 	// statically append the extension to the constructor
 	constructor.extends = tag;
 	// save the definition
 	DEFINITIONS.set(name, constructor);
+}
+
+export function getAlloyDefinition(name) {
+  return DEFINITIONS.get(name);
 }
 
 function createAlloyConstructor (tagName, creator) {
@@ -40,10 +44,3 @@ function createAlloyConstructor (tagName, creator) {
 		}
 	}
 }
-
-define("lemon", {
-	tag: "canvas",
-	constructor () {
-		this.context = this.element.getContext('2d');
-	}
-});
