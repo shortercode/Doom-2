@@ -1,7 +1,6 @@
 import search from './search';
 import { requireType, requireInstance, isType } from './util';
 
-// TODO unfinished 
 function remove(element, delay){
 	
     if (delay) {
@@ -10,9 +9,9 @@ function remove(element, delay){
     } else {
 		
         if (isType(element, 'string'))
-            element = search(element);
+            element = searchAll(element);
 			
-        if (element[0]) { // array like
+        if (element[0] && element.length) { // array like
             let i = element.length;
             while (i--)
                 remove(element[i]);
