@@ -1,30 +1,40 @@
-import EventEmitter from './EventEmitter';
+import Disposable from './Disposable';
+import CompositeDisposable from './CompositeDisposable';
 import requireType from '../util';
 
 function nestedGet (ctx, path) {
 	let chunks = path.split(".");
 		
-	for (let chunk of chunk) {
-		if (!ctx)
-			break;
-		ctx = typeof ctx.get === "function" ? ctx.get(chunk) : ctx[chunk];
-	}
+	return nestedLookup(ctx, chunks);
+}
+
+function nestedHas (ctx, path) {
+	let chunks = path.split(".");
+	let key = path.pop();
+		
+	ctx = nestedLookup(ctx, chunks);
 	
-	return ctx;
+	if (!ctx)
+		return false;
+		
+	return typeof ctx.has === "function" ? ctx.has(key) : (key in ctx);
 }
 
 function nestedSet (ctx, path, obj) {
 	let chunks = path.split(".");
 	let key = chunks.pop();
 		
+	ctx = nestedLookup(ctx, chunks);
+	
+	if (ctx)
+		typeof ctx.set === "function" ? ctx.set(key, obj) : (ctx[key] = obj);
+}
+
+function nestedLookup (ctx, pathChunks) {
 	for (let chunk of chunk) {
 		if (!ctx)
 			break;
 		ctx = typeof ctx.get === "function" ? ctx.get(chunk) : ctx[chunk];
-	}
-	
-	if (ctx) {
-		typeof ctx.set === "function" ? ctx.set(key, obj) : (ctx[key] = obj);
 	}
 }
 
@@ -32,51 +42,50 @@ function nestedUpdate (ctx, str) {
 	let chunks = path.split(".");
 	let key = chunks.pop();
 		
-	for (let chunk of chunk) {
-		if (!ctx)
-			break;
-		ctx = ctx instanceof Model ? ctx.get(chunk) : null;
-	}
+	ctx = nestedLookup(ctx, chunks);
 	
-	if (ctx instanceof Model) {
+	if (ctx instanceof Model)
 		ctx.update(key);
-	}
 }
 
-class Model extends EventEmitter {
-	constructor () {
-		super();
+export default class Model{
+	constructor (obj) {
+		this.properties = new Map(Object.entries(obj));
+		this.listeners = new Set();
 		this.childrenBinding = new Map();
-		this.properties = new Map();
+	}
+	emit (...args) {
+		for (let listener of this.listeners) {
+			listener(...args);
+		}
+	}
+	watch (fn) {
+		this.listeners.add(fn);
+		return new Disposable(() => this.listeners.delete(fn));
 	}
 	get (str) {
 		requireType(str, "string");
 		
 		if (str.includes("."))
-			return nestedGet(str);
+			return nestedGet(this.properties, str);
 		
-		let value = this.properties.get(str)
-		this.emit("get", {
-			"type": "get",
-			"path": str,
-			"value": value,
-			"target": this
-		});
+		return this.properties.get(str);
+	}
+	has (str) {
+		requireType(str, "string");
 		
-		return value;
+		if (str.includes("."))
+			return nestedHas(this.properties, str);
+		
+		return this.properties.has(str);
 	}
 	set (str, obj) {
 		requireType(str, "string");
 		
 		if (str.includes("."))
-			return nestedSet(str, obj);
+			return nestedSet(this.properties, str, obj);
 		
-		this.emit("set", {
-			"type": "set",
-			"path": str,
-			"value": obj,
-			"target": this
-		});
+		this.emit(str, obj);
 		
 		let childBinding = this.childrenBinding.get(str);
 		let valueIsModel = obj instanceof Model;
@@ -95,16 +104,11 @@ class Model extends EventEmitter {
 		// bubble up through the parent models
 		
 		if (valueIsModel) {
-			childBinding = obj.on("set get", e => {
+			childBinding = obj.watch((path, value) => {
 				// need to create a new event object based on the child one
 				// with an updated path, this is so we don't change the way
 				// the event appears to other listeners at the child level
-				this.emit(e.type, {
-					"type": e.type,
-					"path": str + "." + e.path,
-					"value": e.value,
-					"target": e.target
-				});
+				this.emit(str + "." + path, value);
 			});
 			this.childrenBinding.set(str, childBinding);
 		}
@@ -114,15 +118,25 @@ class Model extends EventEmitter {
 		requireType(str, "string");
 		
 		if (str.includes("."))
-			return nestedUpdate(str, obj);
+			return nestedUpdate(this, str, obj);
 			
 		let value = this.get(str);
 		
-		this.emit("set", {
-			"type": "set",
-			"path": str,
-			"value": value,
-			"target": this
-		});
+		this.emit(str, value);
+	}
+	[Symbol.iterator] () {
+		return this.properties.values();
+	}
+	values () {
+		return this.properties.values();
+	}
+	keys () {
+		return this.properties.keys();
+	}
+	entries () {
+		return this.properties.entries();
+	}
+	get size () {
+		return this.properties.size;
 	}
 }
