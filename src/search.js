@@ -3,5 +3,5 @@ export function search(str, parent) {
 }
 
 export function searchAll(str, parent) {
-	return (parent || document).querySelector(str);
+	return (parent || document).querySelectorAll(str);
 }
