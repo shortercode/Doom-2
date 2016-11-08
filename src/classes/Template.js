@@ -1,5 +1,5 @@
 const MUSTACHE_REGEX = /{{([\w.]+)}}/g;
-const RENDER_QUEUE = new Set();
+const RENDER_QUEUE = new Map();
 
 let renderCallback = null;
 
@@ -11,20 +11,21 @@ function renderQueue() {
 	RENDER_QUEUE.clear();
 }
 
-class Template
+export default class Template
 {
 	constructor (element, model, string, safe = true)
 	{
 		this.pattern = string;
 		this.keys = new Map();
+		this.queue = RENDER_QUEUE;
 		this.value = "";
 		this.replacer = (match, group) => {
 			let value;
-			if (this.keys.has(e.path)) {
-				value = this.keys.get(e.path);
+			if (this.keys.has(group)) {
+				value = this.keys.get(group);
 			} else {
 				value = model.get(group);
-				this.keys.set(e.path, value + "");
+				this.keys.set(group, value + "");
 			}
 			return value;
 		}
@@ -37,10 +38,10 @@ class Template
 		*/
 		this.safe = safe;
 		// attach the render function to the model watcher ( so we get automatic updates from the model)
-		model.on("set", e => {
-			if (this.keys.has(e.path)) {
-				RENDER_QUEUE.add(this);
-				this.keys.set(e.path, e.value + "");
+		model.watch((path, value) => {
+			if (this.keys.has(path)) {
+				this.queue.set(element, this);
+				this.keys.set(path, value + "");
 				if (!renderCallback)
 					renderCallback = requestAnimationFrame(renderQueue);
 			}
@@ -69,5 +70,3 @@ class Template
 		return string.replace(MUSTACHE_REGEX, (match, group) => model.get(group));
 	}
 }
-
-export Template;
