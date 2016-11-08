@@ -1,63 +1,54 @@
 import CompositeDisposable from "./CompositeDisposable"
 import Disposable from "./Disposable"
 
-export class EventEmitter {
+export default class EventEmitter {
 	constructor () {
 		this.disposed = false;
-		this.eventMap = new Map();
-		this.disposable = new CompositeDisposable();
+		this.handlers = new Map();
 	}
 	on (eventName, callback) {
-		if (!this.disposed) {
-			let eventDisposable;
+		if (this.disposed)
+			return;
 			
-			if (eventName.includes(" ")) {
+		let eventDisposable;
+		if (eventName.includes(" ")) {
+			eventDisposable = new CompositeDisposable();
+			for (let name of eventName.split(" "))
+				eventDisposable.add(this.on(name, callback));
 				
-				let eventDisposable = new CompositeDisposable();
-				for (let name of eventName.split(" ")) {
-					eventDisposable.add(this.on(name, callback));
-				}
-				
-			} else {
-				
-				let eventList = this.eventMap.get(eventName);
-				if (!eventList) {
-					eventList = new Set();
-					this.eventMap.set(eventName, eventList);
-				}
-				eventDisposable = new Disposable(() => eventList.delete(callback));
-				eventList.add(callback);
-				this.disposable.add(eventDisposable);
-				
+		} else {
+			let eventHandler = this.handlers.get(eventName);
+			if (!eventHandler) {
+				eventHandler = new Set();
+				this.handlers.set(eventName, eventHandler);
 			}
-			
-			return eventDisposable;
+			eventDisposable = new Disposable(() => eventHandler.delete(callback));
+			eventList.add(callback);
 		}
+		return eventDisposable;
 	}
 	once (eventName, callback) {
-		const disposable = this.on(eventName, eventObject => {
+		if (this.disposed)
+			return;
+		let disposable = this.on(eventName, eventObject => {
 			disposable.dispose();
 			callback(eventObject);
 		});
 		return disposable;
 	}
 	emit (eventName, ...eventObjects) {
-		if (!this.disposed) {
-			const eventList = this.eventMap.get(eventName);
-			if (eventList) {
-				for (let handler of eventList) {
-					handler(...eventObjects);
-				}
-			}
+		if (this.disposed)
+			return;
+		let eventHandler = this.handlers.get(eventName);
+		if (eventList) {
+			for (let handler of eventList)
+				handler(...eventObjects);
 		}
 	}
 	dispose () {
-		if (!this.disposed) {
-			this.disposable.dispose();
-			this.disposable = null;
-			this.eventMap.clear();
-			this.eventMap = null;
-			this.disposed = true;
-		}
+		if (this.disposed)
+			return;
+		this.handlers = null;
+		this.disposed = true;
 	}
 }
