@@ -4,7 +4,7 @@ import {
   isType
 } from './util';
 
-import {getAlloyDefinition} from './define';
+import getAlloyDefinition from './define';
 
 const ATTRIBUTES = {
 	children (children) {
@@ -49,6 +49,10 @@ const ATTRIBUTES = {
 	class (str) {
 		requireType(str, 'string');
 		this.className = str;
+	},
+	ref (str) {
+		requireType(str, 'string');
+		
 	}
 };
 
@@ -56,7 +60,8 @@ function create(options, parent) {
 	let element;
 	if (isType(options, 'string')) {
 		// if options was supplied as a string, use that as the tagName
-		element = document.createElement(options);
+		let alloy = getAlloyDefinition(tag);
+		element = alloy ? alloy() : document.createElement(tag);
 	} else {
 		requireInstance(options, Object);
 		const tag = options.tag;
@@ -67,12 +72,12 @@ function create(options, parent) {
 		} else {
 			element = document.createElement('div');
 		}
-		//
+		
 		for (let attribute in options) {
 			if (ATTRIBUTES[attribute])
 				ATTRIBUTES[attribute].apply(element, options[attribute]);
 			else
-				console.warn()
+				element[attribute] = options[attribute];
 		}
 	}
 	// check for optional
@@ -83,4 +88,4 @@ function create(options, parent) {
 	return element;
 }
 
-export default create;
+export create;
