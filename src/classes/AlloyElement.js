@@ -1,9 +1,13 @@
 import EventEmitter from './EventEmitter';
+import { requireType, requireInstance } from './util';
+
+const EVENT_METHODS = new Map();
 
 class Alloy extends EventEmitter {
 	
 	constructor (element) {
 		super();
+		requireInstance(element, HTMLElement);
 		this.element = element;
 	}
 	
@@ -52,12 +56,24 @@ class Alloy extends EventEmitter {
 		return this.element.parentNode;
 	}
 	
+	set parent (v) {
+		v.appendChild(this.element);
+	}
+	
 	get firstChild () {
 		return this.element.firstElementChild;
 	}
 	
+	set firstChild (v) {
+		this.element.replaceChild(v, this.element.firstElementChild);
+	}
+	
 	get lastChild () {
 		return this.element.lastElementChild;
+	}
+	
+	set firstChild (v) {
+		this.element.replaceChild(v, this.element.lastElementChild);
 	}
 	
 	get previousSibling () {
@@ -70,6 +86,18 @@ class Alloy extends EventEmitter {
 	
 	get style () {
 		return this.element.style;
+	}
+	
+	on (eventName, callback) {
+		let eventMethod = EVENT_METHODS.get(eventName);
+		let eventMethodDisposable
+		if (eventMethod) {
+			return new CompositeDisposable(
+				super(eventName, callback),
+				eventMethod(this, eventName)
+			);
+		}
+		return super(eventName, callback);
 	}
 	
 	is (element) {
