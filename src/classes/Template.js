@@ -31,6 +31,7 @@ export default class Template
 		}
 		// HTMLElement that this instance is linked to
 		this.element = element;
+    this.element["[[template]]"] = this;
 		/*
 			TemplateNode.safe prevents the template string being interpreted as a HTML string,
 			if theres user based data coming through this template it MUST be set to true
@@ -49,13 +50,13 @@ export default class Template
 		// update with whatever we have now
 		this.render();
 	}
-	
+
 	template (str) {
 		this.keys.clear();
 		this.pattern = str;
 		this.render();
 	}
-	
+
 	render ()
 	{
 		const content = this.pattern.replace(MUSTACHE_REGEX, this.replacer);
@@ -65,7 +66,7 @@ export default class Template
 			this.element[this.safe ? "textContent" : "innerHTML"] = content;
 		}
 	}
-	
+
 	static render (model, string) {
 		return string.replace(MUSTACHE_REGEX, (match, group) => model.get(group));
 	}
