@@ -3,10 +3,9 @@ import { requireType, requireInstance } from './util';
 
 const EVENT_METHODS = new Map();
 
-class Alloy extends EventEmitter {
+class Alloy {
 	
 	constructor (element) {
-		super();
 		requireInstance(element, HTMLElement);
 		this.element = element;
 	}
@@ -88,16 +87,25 @@ class Alloy extends EventEmitter {
 		return this.element.style;
 	}
 	
-	on (eventName, callback) {
-		let eventMethod = EVENT_METHODS.get(eventName);
-		let eventMethodDisposable
-		if (eventMethod) {
-			return new CompositeDisposable(
-				super(eventName, callback),
-				eventMethod(this, eventName)
-			);
-		}
-		return super(eventName, callback);
+	on (eventName, eventHandler, capture) {
+		this.element.addEventListener(eventName, callback, capture);
+	}
+	
+	once (eventName, eventMethod, capture) {
+		let callback = (...args) => {
+  			this.element.removeEventListener(eventName, callback, capture);
+  			callback = null;
+    		eventMethod(...args);
+    	}
+        this.element.addEventListener(eventName, callback, capture);
+	}
+	
+	addEventListener (eventName, callback, capture) {
+		this.element.addEventListener(eventName, callback, capture);
+	}
+	
+	removeEventListener (eventName, callback, capture) {
+		this.element.removeEventListener(eventName, callback, capture);
 	}
 	
 	is (element) {
@@ -132,20 +140,24 @@ class Alloy extends EventEmitter {
 		return this.element.insertAfter(...args);
 	}
 
-	setAttribute (...args) {
-		return this.element.setAttribute(...args);
+	set (name, value) {
+		return this.element.setAttribute(name, value);
 	}
 
-	hasAttribute (...args) {
-		return this.element.hasAttribute(...args);
+	has (name) {
+		return this.element.hasAttribute(name);
 	}
 
-	getAttribute (...args) {
-		return this.element.getAttribute(...args);
+	get (name) {
+		return this.element.getAttribute(name);
 	}
 
-	contains (...args) {
-		return this.element.contains(...args);
+	contains (child) {
+		return this.element.contains(child);
+	}
+	
+	within (parent) {
+		return parent.contains(this.element);
 	}
 }
 
