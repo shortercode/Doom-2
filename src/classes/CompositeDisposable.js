@@ -36,4 +36,7 @@ export default class CompositeDisposable {
 			
 		this.disposables.clear();
 	}
+	[Symbol.iterator] () {
+		return this.disposables.values();
+	}
 }
