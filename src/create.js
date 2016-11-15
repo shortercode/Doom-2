@@ -77,6 +77,14 @@ const ATTRIBUTES = {
   }
 };
 
+const IGNORE_ATTRIBUTES = new Set([
+  "delay",
+  "tag",
+  "dictionary",
+  "scope",
+  "parent"
+]);
+
 function create(options, parent) {
   let element;
   // if options was supplied as a string, use that as the tagName
@@ -88,7 +96,7 @@ function create(options, parent) {
     requireInstance(options, Object);
 	const delay = options["delay"];
 	// attempt to remove the delay property, so after the timer it isn't repeated
-	delete options["delay"];
+	options["delay"] = null;
 	// if a delay is specified we should set a timer and bail immediately
 	if (delay)
 	  return wait(delay, create, options, parent);
@@ -96,12 +104,10 @@ function create(options, parent) {
     const tag = options["tag"] || 'div';
     const ref = options["dictionary"];
     const scope = options["scope"];
-	parent = options["parent"] || parent;
-	// remove any values that shouldn't be called as an attribute
-	delete options["tag"];
-	delete options["dictionary"];
-	delete options["scope"];
-	delete options["parent"];
+	// if provided with a parent parameter override the argument value
+	// normally only one will be defined
+	if (options[parent])
+		parent = options["parent"];
 	// if we recieved a dictionary we should add it to our reference stack
     if (ref) {
       if (typeof ref !== 'object') {
@@ -122,10 +128,10 @@ function create(options, parent) {
     // now we can work through our attribute list
     for (let attribute in options) {
 	  // if the attribute exist then execute it using the element as a context
-      if (ATTRIBUTES[attribute])
+      if (ATTRIBUTES[attribute]) {
         ATTRIBUTES[attribute].apply(element, options[attribute]);
 	  // otherwise just try to set the value
-      else
+  	  } else if (!IGNORE_ATTRIBUTES.has(attribute))
         element[attribute] = options[attribute];
     }
 	// if we had a dictionary then we should remove it from the stack
