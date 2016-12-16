@@ -1,13 +1,18 @@
-import EventEmitter from './EventEmitter';
 import { requireType, requireInstance } from './util';
 
-const EVENT_METHODS = new Map();
+const ALLOY_LOOKUP = new WeakMap();
 
 class Alloy {
-	
 	constructor (element) {
 		requireInstance(element, HTMLElement);
-		this.element = element;
+		// use define property to make the element value fixed
+		Object.defineProperty(this, "element", {
+			value: element,
+			enumerable: false,
+			writable: false,
+			configurable: false
+		});
+		ALLOY_LOOKUP.set(element, this);
 	}
 	
 	get id () {
@@ -59,27 +64,27 @@ class Alloy {
 		v.appendChild(this.element);
 	}
 	
-	get firstChild () {
+	get first () {
 		return this.element.firstElementChild;
 	}
 	
-	set firstChild (v) {
+	set first (v) {
 		this.element.replaceChild(v, this.element.firstElementChild);
 	}
 	
-	get lastChild () {
+	get last () {
 		return this.element.lastElementChild;
 	}
 	
-	set firstChild (v) {
+	set first (v) {
 		this.element.replaceChild(v, this.element.lastElementChild);
 	}
 	
-	get previousSibling () {
+	get previous () {
 		return this.element.previousElementSibling;
 	}
 	
-	get nextSibling () {
+	get next () {
 		return this.element.nextElementSibling;
 	}
 	
@@ -89,6 +94,10 @@ class Alloy {
 	
 	on (eventName, eventHandler, capture) {
 		this.element.addEventListener(eventName, callback, capture);
+	}
+	
+	off (eventName, eventHandler, capture) {
+		this.element.removeEventListener(eventName, callback, capture);
 	}
 	
 	once (eventName, eventMethod, capture) {
@@ -112,32 +121,29 @@ class Alloy {
 		return this.element === element;
 	}
 	
-	search (...args) {
-		return this.element.querySelector(...args);
+	search (query) {
+		return this.element.querySelector(query);
 	}
 
-	searchAll (...args) {
-		return this.element.querySelectorAll(...args);
+	searchAll (query) {
+		return this.element.querySelectorAll(query);
 	}
 
-	appendChild (...args) {
-		return this.element.appendChild(...args);
-	}
-	
-	removeChild (...args) {
-		return this.element.removeChild(...args);
+	remove (child) {
+		return this.element.removeChild(child);
 	}
 
-	remove (...args) {
-		return this.element.remove(...args);
-	}
-
-	insertBefore (...args) {
-		return this.element.insertBefore(...args);
-	}
-
-	insertAfter (...args) {
-		return this.element.insertAfter(...args);
+	insert (newNode, position, referenceNode) {
+		
+		if (!position)
+			return this.element.appendChild(newNode);
+		
+		if (position === "after")
+			referenceNode = referenceNode && referenceNode.nextSibling;
+		else if (position !== "before")
+			throw new Error(`${newNode} can only be inserted before or after ${referenceNode} not "${position}"`);
+			
+		return this.element.insertBefore(newNode, referenceNode);
 	}
 
 	set (name, value) {
@@ -151,6 +157,10 @@ class Alloy {
 	get (name) {
 		return this.element.getAttribute(name);
 	}
+	
+	delete (name) {
+		return this.element.removeAttribute(name);
+	}
 
 	contains (child) {
 		return this.element.contains(child);
@@ -159,6 +169,10 @@ class Alloy {
 	within (parent) {
 		return parent.contains(this.element);
 	}
+	
+	static for(element) {
+		return ALLOY_LOOKUP.get(element);
+	}
 }
 
-export default AlloyElement;
+export default Alloy;
