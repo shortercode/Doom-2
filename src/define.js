@@ -21,12 +21,14 @@ function define(name, create) {
 	EXTENDABLE_ALLOYS.set(name, create);
 }
 
-function alloy(name) {
+function alloy(name = 'div') {
 	let newAlloy = EXTENDABLE_ALLOYS.get(name);
 	if (!newAlloy) {
-		newAlloy = class NativeAlloyElement extends AlloyElement (name) {
-			constructor () {
+		newAlloy = class NativeAlloyElement extends AlloyElement {
+			constructor (params) {
 				super(document.createElement(name));
+				if (params)
+					modify(params, this.element);
 			}
 			static get extends () {
 				return name;
