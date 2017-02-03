@@ -1,143 +1,130 @@
-import EventEmitter from './EventEmitter';
 import { requireType, requireInstance } from './util';
 
 const EVENT_METHODS = new Map();
 
 class Alloy {
-	
+
 	constructor (element) {
 		requireInstance(element, HTMLElement);
 		this.element = element;
 	}
-	
+
 	get id () {
 		return this.element.id;
 	}
-	
-	set id (v) {
-		this.element.id = v;
+
+	set id (id) {
+		this.element.id = id;
 	}
-	
+
 	get class () {
 		return this.element.classList;
 	}
-	
+
 	get text () {
 		return this.element.textContent;
 	}
-	
-	set text (v) {
-		this.element.textContent = v;
+
+	set text (textContent) {
+		this.element.textContent = textContent;
 	}
-	
+
 	get html () {
 		return this.element.innerHTML;
 	}
-	
-	set html (v) {
-		this.element.innerHTML = v;
+
+	set html (innerHTML) {
+		this.element.innerHTML = innerHTML;
 	}
-	
+
 	get root () {
-		let parent = null;
+		let parentNode = null;
 		let element = this.element;
 		while (element.parentNode) {
-			parent = element = element.parentNode;
+			parentNode = element = element.parentNode;
 		}
-		return parent;
+		return parentNode;
 	}
 
 	get children () {
 		return this.element.children;
 	}
-	
+
 	get parent () {
 		return this.element.parentNode;
 	}
-	
-	set parent (v) {
-		v.appendChild(this.element);
+
+	set parent (parentNode) {
+		parentNode.appendChild(this.element);
 	}
-	
+
 	get firstChild () {
 		return this.element.firstElementChild;
 	}
-	
-	set firstChild (v) {
-		this.element.replaceChild(v, this.element.firstElementChild);
-	}
-	
+
 	get lastChild () {
 		return this.element.lastElementChild;
 	}
-	
-	set firstChild (v) {
-		this.element.replaceChild(v, this.element.lastElementChild);
-	}
-	
+
 	get previousSibling () {
 		return this.element.previousElementSibling;
 	}
-	
+
 	get nextSibling () {
 		return this.element.nextElementSibling;
 	}
-	
+
 	get style () {
 		return this.element.style;
 	}
-	
+
 	on (eventName, eventHandler, capture) {
-		this.element.addEventListener(eventName, callback, capture);
+		this.element.addEventListener(eventName, eventMethod, capture);
 	}
-	
+
 	once (eventName, eventMethod, capture) {
 		let callback = (...args) => {
   			this.element.removeEventListener(eventName, callback, capture);
   			callback = null;
     		eventMethod(...args);
     	}
-        this.element.addEventListener(eventName, callback, capture);
-	}
-	
-	addEventListener (eventName, callback, capture) {
-		this.element.addEventListener(eventName, callback, capture);
-	}
-	
-	removeEventListener (eventName, callback, capture) {
-		this.element.removeEventListener(eventName, callback, capture);
-	}
-	
-	is (element) {
-		return this.element === element;
-	}
-	
-	search (...args) {
-		return this.element.querySelector(...args);
+      this.element.addEventListener(eventName, callback, capture);
 	}
 
-	searchAll (...args) {
-		return this.element.querySelectorAll(...args);
+	addEventListener (eventName, eventMethod, capture) {
+		this.element.addEventListener(eventName, eventMethod, capture);
 	}
 
-	appendChild (...args) {
-		return this.element.appendChild(...args);
-	}
-	
-	removeChild (...args) {
-		return this.element.removeChild(...args);
+	removeEventListener (eventName, eventMethod, capture) {
+		this.element.removeEventListener(eventName, eventMethod, capture);
 	}
 
-	remove (...args) {
-		return this.element.remove(...args);
+	search (querySelector) {
+		return this.element.querySelector(querySelector);
 	}
 
-	insertBefore (...args) {
-		return this.element.insertBefore(...args);
+	searchAll (querySelector) {
+		return this.element.querySelectorAll(querySelector);
 	}
 
-	insertAfter (...args) {
-		return this.element.insertAfter(...args);
+	appendChild (newNode) {
+		return this.element.appendChild(newNode);
+	}
+
+	removeChild (newNode) {
+		return this.element.removeChild(newNode);
+	}
+
+	remove () {
+		return this.element.remove();
+	}
+
+	insertBefore (newNode, referenceNode) {
+		return this.element.insertBefore(newNode, referenceNode);
+	}
+
+	insertAfter (newNode, referenceNode) {
+		return this.element.insertAfter(newNode, referenceNode);
 	}
 
 	set (name, value) {
@@ -152,12 +139,16 @@ class Alloy {
 		return this.element.getAttribute(name);
 	}
 
-	contains (child) {
-		return this.element.contains(child);
+	is (element) {
+		return this.element === element;
 	}
-	
-	within (parent) {
-		return parent.contains(this.element);
+
+	contains (childNode) {
+		return this.element.contains(childNode);
+	}
+
+	within (parentNode) {
+		return parentNode.contains(this.element);
 	}
 }
 
