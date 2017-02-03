@@ -1,5 +1,6 @@
 const MUSTACHE_REGEX = /{{([\w.]+)}}/g;
 const RENDER_QUEUE = new Map();
+const TEMPLATE_LOOKUP = new WeakMap();
 
 let renderCallback = null;
 
@@ -31,7 +32,8 @@ export default class Template
 		}
 		// HTMLElement that this instance is linked to
 		this.element = element;
-    this.element["[[template]]"] = this;
+		TEMPLATE_LOOKUP.set(element, this);
+    	this.element["[[template]]"] = this;
 		/*
 			TemplateNode.safe prevents the template string being interpreted as a HTML string,
 			if theres user based data coming through this template it MUST be set to true
@@ -69,5 +71,9 @@ export default class Template
 
 	static render (model, string) {
 		return string.replace(MUSTACHE_REGEX, (match, group) => model.get(group));
+	}
+	
+	static for (element) {
+		return TEMPLATE_LOOKUP.get(element);
 	}
 }

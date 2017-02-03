@@ -1,12 +1,19 @@
 import { requireType, requireInstance } from './util';
 
-const EVENT_METHODS = new Map();
+const ALLOY_LOOKUP = new WeakMap();
 
 class Alloy {
 
 	constructor (element) {
 		requireInstance(element, HTMLElement);
-		this.element = element;
+		// use define property to make the element value fixed
+		Object.defineProperty(this, "element", {
+			value: element,
+			enumerable: false,
+			writable: false,
+			configurable: false
+		});
+		ALLOY_LOOKUP.set(element, this);
 	}
 
 	get id () {
@@ -82,13 +89,17 @@ class Alloy {
 		this.element.addEventListener(eventName, eventMethod, capture);
 	}
 
+	off (eventName, eventHandler, capture) {
+		this.element.removeEventListener(eventName, callback, capture);
+	}
+	
 	once (eventName, eventMethod, capture) {
 		let callback = (...args) => {
   			this.element.removeEventListener(eventName, callback, capture);
   			callback = null;
-    		eventMethod(...args);
-    	}
-      this.element.addEventListener(eventName, callback, capture);
+    			eventMethod(...args);
+    		};
+      		this.element.addEventListener(eventName, callback, capture);
 	}
 
 	addEventListener (eventName, eventMethod, capture) {
@@ -125,6 +136,30 @@ class Alloy {
 
 	insertAfter (newNode, referenceNode) {
 		return this.element.insertAfter(newNode, referenceNode);
+
+	search (query) {
+		return this.element.querySelector(query);
+	}
+
+	searchAll (query) {
+		return this.element.querySelectorAll(query);
+	}
+
+	remove (child) {
+		return this.element.removeChild(child);
+	}
+
+	insert (newNode, position, referenceNode) {
+		
+		if (!position)
+			return this.element.appendChild(newNode);
+		
+		if (position === "after")
+			referenceNode = referenceNode && referenceNode.nextSibling;
+		else if (position !== "before")
+			throw new Error(`${newNode} can only be inserted before or after ${referenceNode} not "${position}"`);
+			
+		return this.element.insertBefore(newNode, referenceNode);
 	}
 
 	set (name, value) {
@@ -138,6 +173,10 @@ class Alloy {
 	get (name) {
 		return this.element.getAttribute(name);
 	}
+	
+	delete (name) {
+		return this.element.removeAttribute(name);
+	}
 
 	is (element) {
 		return this.element === element;
@@ -150,6 +189,10 @@ class Alloy {
 	within (parentNode) {
 		return parentNode.contains(this.element);
 	}
+	
+	static for(element) {
+		return ALLOY_LOOKUP.get(element);
+	}
 }
 
-export default AlloyElement;
+export default Alloy;
