@@ -39,18 +39,12 @@ const ATTRIBUTES = {
       this.setAttribute(attributeName, attributes[attributeName]);
     }
   },
-  properties(properties) {
-    requireInstance(properties, Object);
-    for (let propertyName in properties) {
-      this[propertyName] = properties[propertyName];
-    }
-  },
-  template(str) {
-    requireType(str, 'string');
-    if (!scopeStack[0])
-      throw new Error("No scope defined for template \"" + str + "\"");
-    new Template(this, scopeStack[0], str);
-  },
+  // template(str) {
+  //   requireType(str, 'string');
+  //   if (!scopeStack[0])
+  //     throw new Error("No scope defined for template \"" + str + "\"");
+  //   new Template(this, scopeStack[0], str);
+  // },
   text(str) {
     requireType(str, 'string');
     this.textContent = str;
